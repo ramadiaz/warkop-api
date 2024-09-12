@@ -1,8 +1,14 @@
 package services
 
-import "warkop-api/repositories"
+import (
+	"warkop-api/dto"
+	"warkop-api/repositories"
+)
 
-type CompService interface{}
+type CompService interface {
+	RegisterUser(data dto.User) (*string, error)
+	GenerateJWT(data dto.User) (*string, error)
+}
 
 type compServices struct {
 	repo repositories.CompRepository

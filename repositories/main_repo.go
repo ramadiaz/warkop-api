@@ -4,9 +4,12 @@ import (
 	"database/sql"
 	"log"
 	"warkop-api/config"
+	"warkop-api/dto"
 )
 
-type CompRepository interface{}
+type CompRepository interface {
+	RegisterUser(data dto.User) (int64, error)
+}
 
 type compRepository struct {
 	DB *sql.DB

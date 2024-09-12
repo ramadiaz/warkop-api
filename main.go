@@ -1,20 +1,29 @@
 package main
 
 import (
-	"warkop-api/routers"
 	"log"
 	"os"
+	"warkop-api/routers"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 )
 
 func main() {
+	if os.Getenv("ENVIRONMENT") == "" {
+		err := godotenv.Load()
+		if err != nil {
+			log.Fatalf("Error loading .env file: %v", err)
+		}
+	}
+
 	port := os.Getenv("PORT")
+	environment := os.Getenv("ENVIRONMENT")
+
 	if port == "" {
 		log.Fatal("ENV ERROR: {PORT}")
 	}
-	environment := os.Getenv("ENVIRONMENT")
 	if environment == "" {
 		log.Fatal("ENV ERROR: {ENVIRONMENT}")
 	}

@@ -52,13 +52,14 @@ func AuthMiddleware() gin.HandlerFunc {
 		}
 
 		user := dto.User{
-			ID:        int64(claims["id"].(float64)),
-			Email:     claims["email"].(string),
-			Username:  claims["username"].(string),
-			FirstName: claims["first_name"].(string),
-			LastName:  claims["last_name"].(string),
-			Contact:   claims["contact"].(string),
-			Address:   claims["address"].(string),
+			ID:         int64(claims["id"].(float64)),
+			Email:      claims["email"].(string),
+			Username:   claims["username"].(string),
+			FirstName:  claims["first_name"].(string),
+			LastName:   claims["last_name"].(string),
+			Contact:    claims["contact"].(string),
+			Address:    claims["address"].(string),
+			IsVerified: claims["is_verified"].(bool),
 		}
 
 		c.Set("user", user)

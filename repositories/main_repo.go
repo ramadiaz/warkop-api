@@ -37,8 +37,8 @@ func NewComponentRepository(DB *sql.DB) *compRepository {
 	_, err = db.Exec(`
 		CREATE TABLE IF NOT EXISTS user (
 			id 			BIGSERIAL PRIMARY KEY NOT NULL,
-			email 		VARCHAR(255),
-			username 	VARCHAR(255),
+			email 		VARCHAR(255) UNIQUE,
+			username 	VARCHAR(255) UNIQUE,
 			password 	VARCHAR(255),
 			first_name 	VARCHAR(255),
 			last_name 	VARCHAR(255),

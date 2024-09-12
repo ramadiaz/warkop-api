@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 
+	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 )
 
@@ -18,6 +19,8 @@ type DBConfig struct {
 }
 
 func InitDB() *sql.DB {
+	godotenv.Load()
+
 	dbConfig := DBConfig{
 		User:     os.Getenv("DB_USER"),
 		Password: os.Getenv("DB_PASSWORD"),
@@ -26,7 +29,7 @@ func InitDB() *sql.DB {
 		Name:     os.Getenv("DB_NAME"),
 	}
 
-	dbURI := fmt.Sprintf("user=%s password=%s host=%s port=%s dbname=%s",  dbConfig.User, dbConfig.Password, dbConfig.Host, dbConfig.Port, dbConfig.Name)
+	dbURI := fmt.Sprintf("user=%s password=%s host=%s port=%s dbname=%s", dbConfig.User, dbConfig.Password, dbConfig.Host, dbConfig.Port, dbConfig.Name)
 
 	db, err := sql.Open("postgres", dbURI)
 	if err != nil {

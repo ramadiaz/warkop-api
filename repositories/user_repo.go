@@ -91,3 +91,14 @@ func (r *compRepository) VerifyAccount(token string) error {
 
 	return nil
 }
+
+func (r *compRepository) GetUserData(username string) (*dto.User, error) {
+	var data dto.User
+
+	err := r.DB.QueryRow("SELECT * FROM users WHERE username = $1", username).Scan(&data.ID, &data.Email, &data.Username, &data.Password, &data.FirstName, &data.LastName, &data.Contact, &data.Address, &data.IsVerified, &data.VerifiedAt, &data.CreatedAt)
+	if err != nil {
+		return nil, err
+	}
+
+	return &data, nil
+}

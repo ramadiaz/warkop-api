@@ -23,7 +23,7 @@ func (s *compServices) RegisterUser(data dto.User) (*string, error) {
 		return nil, err
 	}
 
-	err = s.GenerateVerificationEmail(data)
+	err = s.GenerateVerificationEmail(data.Username)
 	if err != nil {
 		return nil, err
 	}
@@ -56,9 +56,15 @@ func (s *compServices) GenerateJWT(data dto.User) (*string, error) {
 	return &tokenString, nil
 }
 
-func (s *compServices) GenerateVerificationEmail(data dto.User) error {
+func (s *compServices) GenerateVerificationEmail(username string) error {
 	base_url := os.Getenv("FRONT_END_BASE_URL")
-	token, err := s.repo.RegisterToken(data)
+
+	data, err := s.repo.GetUserData(username)
+	if err != nil {
+		return err
+	}
+
+	token, err := s.repo.RegisterToken(*data)
 	if err != nil {
 		return err
 	}

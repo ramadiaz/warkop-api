@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"net/http"
 	"warkop-api/dto"
-	"warkop-api/helpers"
 
 	"github.com/gin-gonic/gin"
 )
@@ -28,7 +27,9 @@ func (h *compHandlers) RegisterUser(c *gin.Context) {
 }
 
 func (h *compHandlers) ResendVerification(c *gin.Context) {
-	err := h.service.GenerateVerificationEmail(helpers.GetUserData(c))
+	username := c.Query("un")
+
+	err := h.service.GenerateVerificationEmail(username)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.Response{Status: http.StatusInternalServerError, Error: err.Error()})
 		return

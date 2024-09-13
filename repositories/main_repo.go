@@ -12,6 +12,7 @@ type CompRepository interface {
 	RegisterToken(data dto.User) (*string, error)
 	RegisterAPIKey(name string, secret string) error
 	VerifyAccount(token string) error
+	GetUserData(username string) (*dto.User, error)
 }
 
 type compRepository struct {

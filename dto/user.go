@@ -10,6 +10,6 @@ type User struct {
 	Contact    string `json:"contact" form:"contact" binding:"required"`
 	Address    string `json:"address" form:"address" binding:"required"`
 	IsVerified bool   `json:"is_verified"`
-	VerifiedAt string `json:"verified_at"`
+	VerifiedAt *string `json:"verified_at"`
 	CreatedAt  string `json:"created_at"`
 }

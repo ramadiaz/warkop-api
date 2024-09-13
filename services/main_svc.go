@@ -9,7 +9,7 @@ type CompService interface {
 	RegisterUser(data dto.User) (*string, error)
 	GenerateJWT(data dto.User) (*string, error)
 	SendEmail(data dto.Email) error
-	GenerateVerificationEmail(data dto.User) error
+	GenerateVerificationEmail(username string) error
 	GenerateAPIKey(name string, secret string) (*string, error)
 	VerifyAccount(token string) error
 }

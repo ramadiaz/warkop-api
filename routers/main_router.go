@@ -22,5 +22,11 @@ func CompRouter(api *gin.RouterGroup) {
 	userRouter := api.Group("/user")
 	{
 		userRouter.POST("/register", compHandler.RegisterUser)
+
+		verificationRouter := userRouter.Group("/verif")
+		verificationRouter.Use(middleware.AuthMiddleware())
+		{
+			verificationRouter.POST("/resend", compHandler.ResendVerification)
+		}
 	}
 }

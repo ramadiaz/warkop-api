@@ -29,6 +29,7 @@ func CompRouter(api *gin.RouterGroup) {
 		verificationRouter.Use(middleware.AuthMiddleware())
 		{
 			verificationRouter.POST("/resend", compHandler.ResendVerification)
+			verificationRouter.POST("/verify", compHandler.VerifyAccount)
 		}
 	}
 }

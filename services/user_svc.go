@@ -123,3 +123,7 @@ func (s *compServices) GenerateVerificationEmail(data dto.User) error {
 
 	return nil
 }
+
+func (s *compServices) VerifyAccount(token string) error {
+	return s.repo.VerifyAccount(token)
+}

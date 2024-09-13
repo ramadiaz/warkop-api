@@ -11,6 +11,7 @@ type CompService interface {
 	SendEmail(data dto.Email) error
 	GenerateVerificationEmail(data dto.User) error
 	GenerateAPIKey(name string, secret string) (*string, error)
+	VerifyAccount(token string) error
 }
 
 type compServices struct {

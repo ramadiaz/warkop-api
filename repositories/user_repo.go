@@ -1,6 +1,10 @@
 package repositories
 
 import (
+	"errors"
+	"net/http"
+	"strconv"
+	"time"
 	"warkop-api/dto"
 	"warkop-api/helpers"
 )
@@ -41,11 +45,31 @@ func (r *compRepository) RegisterToken(data dto.User) (*string, error) {
 		return nil, err
 	}
 
-	err = tx.Commit(); 
+	err = tx.Commit()
 	if err != nil {
 		tx.Rollback()
 		return nil, err
 	}
 
 	return &token, nil
+}
+
+func (r *compRepository) VerifyAccount(token string) error {
+	var expiredAt time.Time
+
+	err := r.DB.QueryRow("SELECT expired_at FROM verification_token WHERE token = $1", token).Scan(&expiredAt)
+	if err != nil {
+		return err
+	}
+
+	if time.Now().After(expiredAt) {
+		return errors.New(strconv.Itoa(http.StatusGone))
+	}
+
+	_, err = r.DB.Exec("UPDATE users SET is_verified = true, verified_at = NOW() WHERE id = (SELECT user_id FROM verification_token WHERE token = $1)", token)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

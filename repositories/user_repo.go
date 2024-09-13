@@ -66,8 +66,26 @@ func (r *compRepository) VerifyAccount(token string) error {
 		return errors.New(strconv.Itoa(http.StatusGone))
 	}
 
-	_, err = r.DB.Exec("UPDATE users SET is_verified = true, verified_at = NOW() WHERE id = (SELECT user_id FROM verification_token WHERE token = $1)", token)
+	tx, err := r.DB.Begin()
 	if err != nil {
+		return err
+	}
+
+	_, err = tx.Exec("UPDATE users SET is_verified = true, verified_at = NOW() WHERE id = (SELECT user_id FROM verification_token WHERE token = $1)", token)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	_, err = tx.Exec(`DELETE from verification_token WHERE token = $1`, token)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		tx.Rollback()
 		return err
 	}
 

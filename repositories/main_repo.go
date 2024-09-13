@@ -37,16 +37,27 @@ func NewComponentRepository(DB *sql.DB) *compRepository {
 	_, err = db.Exec(`
 		CREATE TABLE IF NOT EXISTS users (
 			id 			BIGSERIAL PRIMARY KEY NOT NULL,
-			email 		VARCHAR(255) UNIQUE,
-			username 	VARCHAR(255) UNIQUE,
-			password 	VARCHAR(255),
-			first_name 	VARCHAR(255),
-			last_name 	VARCHAR(255),
-			contact 	VARCHAR(255),
-			address 	VARCHAR(255),
+			email 		VARCHAR(255) UNIQUE NOT NULL,
+			username 	VARCHAR(255) UNIQUE NOT NULL,
+			password 	VARCHAR(255) NOT NULL,
+			first_name 	VARCHAR(255) NOT NULL,
+			last_name 	VARCHAR(255) NOT NULL,
+			contact 	VARCHAR(255) NOT NULL,
+			address 	VARCHAR(255) NOT NULL,
 			is_verified BOOLEAN DEFAULT FALSE,
 			verified_at TIMESTAMP,
 			created_at 	TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+		);`)
+	if err != nil {
+		log.Fatalf("Error creating table: %v", err)
+	}
+
+	_, err = db.Exec(`
+		CREATE TABLE IF NOT EXISTS verification_token (
+			id 			BIGSERIAL PRIMARY KEY NOT NULL,
+			user_id 	INT NOT NULL,
+			token 		VARCHAR(255) NOT NULL,
+			expired_at  TIMESTAMP NOT NULL
 		);`)
 	if err != nil {
 		log.Fatalf("Error creating table: %v", err)

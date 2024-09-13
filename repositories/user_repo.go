@@ -19,7 +19,7 @@ func (r *compRepository) RegisterUser(data dto.User) (int64, error) {
 }
 
 func (r *compRepository) RegisterToken(data dto.User) (*string, error) {
-	token, err := helpers.GenerateToken()
+	token, err := helpers.GenerateToken(32)
 	if err != nil {
 		return nil, err
 	}

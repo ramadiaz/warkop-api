@@ -5,8 +5,8 @@ import (
 	"encoding/base64"
 )
 
-func GenerateToken() (string, error) {
-	b := make([]byte, 32)
+func GenerateToken(size int) (string, error) {
+	b := make([]byte, size)
 	_, err := rand.Read(b)
 	if err != nil {
 		return "", err

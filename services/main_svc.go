@@ -10,6 +10,7 @@ type CompService interface {
 	GenerateJWT(data dto.User) (*string, error)
 	SendEmail(data dto.Email) error
 	GenerateVerificationEmail(data dto.User) error
+	GenerateAPIKey(name string, secret string) (*string, error)
 }
 
 type compServices struct {

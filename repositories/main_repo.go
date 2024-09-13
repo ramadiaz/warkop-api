@@ -10,6 +10,7 @@ import (
 type CompRepository interface {
 	RegisterUser(data dto.User) (int64, error)
 	RegisterToken(data dto.User) (*string, error)
+	RegisterAPIKey(name string, secret string) error
 }
 
 type compRepository struct {
@@ -59,6 +60,17 @@ func NewComponentRepository(DB *sql.DB) *compRepository {
 			user_id 	INT NOT NULL,
 			token 		VARCHAR(255) NOT NULL,
 			expired_at  TIMESTAMP NOT NULL
+		);`)
+	if err != nil {
+		log.Fatalf("Error creating table: %v", err)
+	}
+
+	_, err = db.Exec(`
+		CREATE TABLE IF NOT EXISTS api_key (
+			id 			BIGSERIAL PRIMARY KEY NOT NULL,
+			name 		VARCHAR(255) NOT NULL,
+			token 		VARCHAR(255) NOT NULL,
+			created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 		);`)
 	if err != nil {
 		log.Fatalf("Error creating table: %v", err)

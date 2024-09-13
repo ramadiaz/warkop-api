@@ -9,6 +9,7 @@ import (
 
 type CompRepository interface {
 	RegisterUser(data dto.User) (int64, error)
+	RegisterToken(data dto.User) (*string, error)
 }
 
 type compRepository struct {

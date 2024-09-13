@@ -8,6 +8,7 @@ import (
 type CompService interface {
 	RegisterUser(data dto.User) (*string, error)
 	GenerateJWT(data dto.User) (*string, error)
+	SendEmail(data dto.Email) error
 }
 
 type compServices struct {

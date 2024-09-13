@@ -96,6 +96,31 @@ func ClientTracker(db *sql.DB) gin.HandlerFunc {
 	}
 }
 
+func APIKeyAuth(db *sql.DB) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		apiKey := c.Request.Header.Get("x-authentication")
+
+		if apiKey == "" {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "API key required"})
+			return
+		}
+
+		var exists bool
+		err := db.QueryRow("SELECT EXISTS(SELECT 1 FROM api_key WHERE token = $1)", apiKey).Scan(&exists)
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
+			return
+		}
+
+		if !exists {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid API key"})
+			return
+		}
+
+		c.Next()
+	}
+}
+
 func NoCacheMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.Header("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0")

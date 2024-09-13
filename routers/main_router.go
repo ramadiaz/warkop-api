@@ -18,10 +18,10 @@ func CompRouter(api *gin.RouterGroup) {
 	compHandler := handlers.NewCompHandlers(compService)
 
 	api.GET("/ping", compHandler.Ping)
-
 	api.POST("/key/register", compHandler.GenerateAPIKey)
 
 	userRouter := api.Group("/user")
+	userRouter.Use(middleware.APIKeyAuth(config.InitDB()))
 	{
 		userRouter.POST("/register", compHandler.RegisterUser)
 

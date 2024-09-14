@@ -75,6 +75,9 @@ func (h *compHandlers) LoginUser(c *gin.Context) {
 		} else if err.Error() == "401" {
 			c.JSON(http.StatusUnauthorized, dto.Response{Status: http.StatusUnauthorized, Error: "Invalid username or password"})
 			return
+		} else if err.Error() == "403" {
+			c.JSON(http.StatusUnauthorized, dto.Response{Status: http.StatusUnauthorized, Error: "Your email is not verified"})
+			return
 		} else {
 			c.JSON(http.StatusInternalServerError, dto.Response{Status: http.StatusInternalServerError, Error: err.Error()})
 		}

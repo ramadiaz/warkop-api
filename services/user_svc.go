@@ -146,6 +146,10 @@ func (s *compServices) LoginUser(username string, password string) (*string, err
 		return nil, errors.New(strconv.Itoa(http.StatusUnauthorized))
 	}
 
+	if !data.IsVerified {
+		return nil, errors.New(strconv.Itoa(http.StatusForbidden))
+	}
+
 	token, err := s.GenerateJWT(*data)
 	if err != nil {
 		return nil, err

@@ -19,7 +19,7 @@ func (s *compServices) RegisterUser(data dto.User) (*string, error) {
 		return nil, err
 	}
 
-	data.ID = id
+	data.ID = *id
 	data.IsVerified = false
 
 	token, err := s.GenerateJWT(data)

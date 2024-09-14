@@ -52,7 +52,7 @@ func AuthMiddleware() gin.HandlerFunc {
 		}
 
 		user := dto.User{
-			ID:         int64(claims["id"].(float64)),
+			ID:         claims["id"].(string),
 			Email:      claims["email"].(string),
 			Username:   claims["username"].(string),
 			FirstName:  claims["first_name"].(string),

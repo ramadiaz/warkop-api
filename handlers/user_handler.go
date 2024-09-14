@@ -38,6 +38,10 @@ func (h *compHandlers) ResendVerification(c *gin.Context) {
 
 	err := h.service.GenerateVerificationEmail(username)
 	if err != nil {
+		if err.Error() == "account already verified" {
+			c.JSON(http.StatusOK, dto.Response{Status: http.StatusOK, Message: "Account already verified"})
+			return
+		}
 		c.JSON(http.StatusInternalServerError, dto.Response{Status: http.StatusInternalServerError, Error: err.Error()})
 		return
 	}

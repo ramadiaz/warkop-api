@@ -63,6 +63,10 @@ func (s *compServices) GenerateVerificationEmail(username string) error {
 		return err
 	}
 
+	if data.IsVerified {
+		return errors.New("account already verified")
+	}
+
 	token, err := s.repo.RegisterToken(*data)
 	if err != nil {
 		return err

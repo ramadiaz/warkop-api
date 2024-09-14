@@ -23,7 +23,7 @@ func (h *compHandlers) RegisterUser(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, dto.Response{Status: http.StatusOK, Message: "Verification Email Verification email has been sent"})
+	c.JSON(http.StatusOK, dto.Response{Status: http.StatusOK, Message: "Verification email has been sent"})
 }
 
 func (h *compHandlers) ResendVerification(c *gin.Context) {

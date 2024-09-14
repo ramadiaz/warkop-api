@@ -72,6 +72,8 @@ func (s *compServices) GenerateVerificationEmail(username string) error {
 		return err
 	}
 
+	verify_url := fmt.Sprintf(base_url+"/verify?token=%s", *token)
+
 	body := fmt.Sprintf(
 		`<html>
 			<head>
@@ -110,13 +112,13 @@ func (s *compServices) GenerateVerificationEmail(username string) error {
 					<p class="title">Email Verification</p>
 					<p class="message">Dear %s,</p>
 					<p class="message">Thank you for registering with our platform. To complete your registration, please clik the button below</p>
-					<a href="%s?token=%s" class="message" style="font-size: 24px; font-weight: bold;">Verify Now</a>
+					<a href="%s" class="message" style="font-size: 24px; font-weight: bold;">Verify Now</a>
 					<p class="message">This code will expire in 24 hours. If you did not request this verification, please ignore this email.</p>
 					<p class="footer">Best regards,<br>Wyvern Team</p>
 				</div>
 			</body>
 		</html>`,
-		data.Email, base_url, *token,
+		data.Email, verify_url,
 	)
 
 	var email_data dto.Email

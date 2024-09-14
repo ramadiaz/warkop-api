@@ -6,6 +6,7 @@ import (
 	"warkop-api/dto"
 
 	"github.com/gin-gonic/gin"
+	"github.com/lib/pq"
 )
 
 func (h *compHandlers) RegisterUser(c *gin.Context) {
@@ -31,6 +32,11 @@ func (h *compHandlers) ResendVerification(c *gin.Context) {
 
 	err := h.service.GenerateVerificationEmail(username)
 	if err != nil {
+		if pqErr, ok := err.(*pq.Error); ok {
+            if pqErr.Code == "23505" {
+                c.JSON(http.StatusConflict, dto.Response{Status: http.StatusConflict, Error: "Username already exist"})
+            }
+        }
 		c.JSON(http.StatusInternalServerError, dto.Response{Status: http.StatusInternalServerError, Error: err.Error()})
 		return
 	}

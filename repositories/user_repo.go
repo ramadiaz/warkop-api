@@ -12,8 +12,8 @@ import (
 func (r *compRepository) RegisterUser(data dto.User) (*string, error) {
 	var id string
 	err := r.DB.QueryRow(
-		`INSERT INTO users (email, username, password, first_name, last_name, contact, address) VALUES($1, $2, $3, $4, $5, $6, $7) RETURNING id`,
-		data.Email, data.Username, data.Password, data.FirstName, data.LastName, data.Contact, data.Address,
+		`INSERT INTO users (username, email, password, first_name, last_name, contact, address) VALUES($1, $2, $3, $4, $5, $6, $7) RETURNING id`,
+		data.Username, data.Email, data.Password, data.FirstName, data.LastName, data.Contact, data.Address,
 	).Scan(&id)
 	if err != nil {
 		return nil, err
@@ -95,7 +95,7 @@ func (r *compRepository) VerifyAccount(token string) error {
 func (r *compRepository) GetUserData(username string) (*dto.User, error) {
 	var data dto.User
 
-	err := r.DB.QueryRow("SELECT * FROM users WHERE username = $1", username).Scan(&data.ID, &data.Email, &data.Username, &data.Password, &data.FirstName, &data.LastName, &data.Contact, &data.Address, &data.IsVerified, &data.VerifiedAt, &data.CreatedAt)
+	err := r.DB.QueryRow("SELECT * FROM users WHERE username = $1", username).Scan(&data.ID, &data.Username, &data.Email, &data.Password, &data.FirstName, &data.LastName, &data.Contact, &data.Address, &data.IsVerified, &data.VerifiedAt, &data.CreatedAt)
 	if err != nil {
 		return nil, err
 	}

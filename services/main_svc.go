@@ -12,6 +12,7 @@ type CompService interface {
 	GenerateVerificationEmail(username string) error
 	GenerateAPIKey(name string, secret string) (*string, error)
 	VerifyAccount(token string) error
+	LoginUser(username string, password string) (*string, error)
 }
 
 type compServices struct {

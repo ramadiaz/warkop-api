@@ -24,6 +24,7 @@ func CompRouter(api *gin.RouterGroup) {
 	userRouter.Use(middleware.APIKeyAuth(config.InitDB()))
 	{
 		userRouter.POST("/register", compHandler.RegisterUser)
+		userRouter.POST("/login", compHandler.LoginUser)
 
 		verificationRouter := userRouter.Group("/verif")
 		verificationRouter.Use(middleware.AuthMiddleware())

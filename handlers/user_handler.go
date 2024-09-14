@@ -62,3 +62,23 @@ func (h *compHandlers) VerifyAccount(c *gin.Context) {
 
 	c.JSON(http.StatusOK, dto.Response{Status: http.StatusOK, Message: "Email Verified"})
 }
+
+func (h *compHandlers) LoginUser(c *gin.Context) {
+	username := c.Request.FormValue("username")
+	password := c.Request.FormValue("password")
+
+	token, err := h.service.LoginUser(username, password)
+	if err != nil {
+		if err.Error() == "404" {
+			c.JSON(http.StatusNotFound, dto.Response{Status: http.StatusNotFound, Error: "User not found"})
+			return
+		} else if err.Error() == "401" {
+			c.JSON(http.StatusUnauthorized, dto.Response{Status: http.StatusUnauthorized, Error: "Invalid username or password"})
+			return
+		} else {
+			c.JSON(http.StatusInternalServerError, dto.Response{Status: http.StatusInternalServerError, Error: err.Error()})
+		}
+	}
+
+	c.JSON(http.StatusOK, dto.Response{Status: http.StatusOK, Message: "Successfully login", Body: token})
+}

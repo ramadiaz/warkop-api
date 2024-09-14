@@ -1,8 +1,12 @@
 package services
 
 import (
+	"database/sql"
+	"errors"
 	"fmt"
+	"net/http"
 	"os"
+	"strconv"
 	"time"
 	"warkop-api/dto"
 
@@ -132,4 +136,25 @@ func (s *compServices) GenerateVerificationEmail(username string) error {
 
 func (s *compServices) VerifyAccount(token string) error {
 	return s.repo.VerifyAccount(token)
+}
+
+func (s *compServices) LoginUser(username string, password string) (*string, error) {
+	data, err := s.repo.GetUserData(username)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, errors.New(strconv.Itoa(http.StatusNotFound))
+		}
+		return nil, err
+	}
+
+	if password != data.Password {
+		return nil, errors.New(strconv.Itoa(http.StatusUnauthorized))
+	}
+
+	token, err := s.GenerateJWT(*data)
+	if err != nil {
+		return nil, err
+	}
+
+	return token, nil
 }

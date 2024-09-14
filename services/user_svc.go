@@ -13,26 +13,21 @@ import (
 	"github.com/dgrijalva/jwt-go"
 )
 
-func (s *compServices) RegisterUser(data dto.User) (*string, error) {
+func (s *compServices) RegisterUser(data dto.User) error {
 	id, err := s.repo.RegisterUser(data)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	data.ID = *id
 	data.IsVerified = false
 
-	token, err := s.GenerateJWT(data)
-	if err != nil {
-		return nil, err
-	}
-
 	err = s.GenerateVerificationEmail(data.Username)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	return token, nil
+	return nil
 }
 
 func (s *compServices) GenerateJWT(data dto.User) (*string, error) {

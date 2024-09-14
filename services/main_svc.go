@@ -6,7 +6,7 @@ import (
 )
 
 type CompService interface {
-	RegisterUser(data dto.User) (*string, error)
+	RegisterUser(data dto.User) error
 	GenerateJWT(data dto.User) (*string, error)
 	SendEmail(data dto.Email) error
 	GenerateVerificationEmail(username string) error

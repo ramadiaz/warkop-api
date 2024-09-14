@@ -17,13 +17,13 @@ func (h *compHandlers) RegisterUser(c *gin.Context) {
 		return
 	}
 
-	token, err := h.service.RegisterUser(data)
+	err = h.service.RegisterUser(data)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.Response{Status: http.StatusInternalServerError, Error: err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, dto.Response{Status: http.StatusOK, Message: "User successfully registerd", Body: token})
+	c.JSON(http.StatusOK, dto.Response{Status: http.StatusOK, Message: "Verification Email Verification email has been sent"})
 }
 
 func (h *compHandlers) ResendVerification(c *gin.Context) {

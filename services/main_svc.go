@@ -13,6 +13,8 @@ type CompService interface {
 	GenerateAPIKey(name string, secret string) (*string, error)
 	VerifyAccount(token string) error
 	LoginUser(username string, password string) (*string, error)
+
+	RegisterMenu(data dto.Menu) error
 }
 
 type compServices struct {

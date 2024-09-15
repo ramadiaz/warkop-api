@@ -32,4 +32,9 @@ func CompRouter(api *gin.RouterGroup) {
 			verificationRouter.POST("/verify", compHandler.VerifyAccount)
 		}
 	}
+
+	menuRouter := api.Group("/menu")
+	{
+		menuRouter.POST("/register", compHandler.RegisterMenu)
+	}
 }

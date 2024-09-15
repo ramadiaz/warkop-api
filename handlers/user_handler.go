@@ -157,7 +157,7 @@ func (h *compHandlers) ResetPassword(c *gin.Context) {
 
 	secret := os.Getenv("JWT_SECRET")
 	if secret == "" {
-		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Error getting secret"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Error getting secret"})
 		return
 	}
 
@@ -169,7 +169,7 @@ func (h *compHandlers) ResetPassword(c *gin.Context) {
 	})
 
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid authorization token"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid authorization token"})
 		return
 	}
 

@@ -114,3 +114,32 @@ func (h *compHandlers) RequestResetPassword(c *gin.Context) {
 
 	c.JSON(http.StatusOK, dto.Response{Status: http.StatusOK, Message: "OTP Code successfully sent to your email!", Body: data.ID})
 }
+
+func (h *compHandlers) VerifyResetPassword(c *gin.Context) {
+	var data dto.OTPVerifyToken
+
+	err := c.ShouldBindJSON(&data)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.Response{Status: http.StatusBadRequest, Error: err.Error()})
+		return
+	}
+
+	result, err := h.service.VerifyResetPassword(data)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			c.JSON(http.StatusNotFound, dto.Response{Status: http.StatusNotFound, Error: "Token Invalid"})
+			return
+		} else if err.Error() == "410" {
+			c.JSON(http.StatusGone, dto.Response{Status: http.StatusGone, Error: "Expired OTP"})
+			return
+		} else if err.Error() == "401" {
+			c.JSON(http.StatusUnauthorized, dto.Response{Status: http.StatusUnauthorized, Error: "Invalid OTP"})
+			return
+		} else {
+			c.JSON(http.StatusInternalServerError, dto.Response{Status: http.StatusInternalServerError, Error: err.Error()})
+			return
+		}
+	}
+
+	c.JSON(http.StatusOK, dto.Response{Status: http.StatusOK, Message: "OTP Code verified", Body: result})
+}

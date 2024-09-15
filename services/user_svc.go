@@ -100,13 +100,41 @@ func (s *compServices) RequestResetPassword(username string) (*dto.User, error) 
 	if err != nil {
 		return nil, err
 	}
-	
+
 	err = s.GenerateOTPEmail(*user_data, otp)
 	if err != nil {
 		return nil, err
 	}
 
 	return user_data, nil
+}
+
+func (s *compServices) VerifyResetPassword(data dto.OTPVerifyToken) (*string, error) {
+	otp_data, err := s.repo.VerifyResetPassword(data)
+	if err != nil {
+		return nil, err
+	}
+
+	if otp_data.OTP != data.OTP {
+		return nil, errors.New(strconv.Itoa(http.StatusUnauthorized))
+	}
+
+	token := jwt.New(jwt.SigningMethodHS256)
+	claims := token.Claims.(jwt.MapClaims)
+	claims["id"] = data.UserID
+	claims["otp"] = data.OTP
+
+	claims["exp"] = time.Now().Add(time.Hour * 24 * 7).Unix()
+
+	secret := os.Getenv("JWT_SECRET")
+
+	secretKey := []byte(secret)
+	tokenString, err := token.SignedString(secretKey)
+	if err != nil {
+		return nil, err
+	}
+
+	return &tokenString, nil
 }
 
 func (s *compServices) GenerateVerificationEmail(username string) error {

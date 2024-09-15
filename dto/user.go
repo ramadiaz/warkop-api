@@ -13,3 +13,8 @@ type User struct {
 	VerifiedAt *string `json:"verified_at"`
 	CreatedAt  string  `json:"created_at"`
 }
+
+type OTPVerifyToken struct {
+	UserID string `json:"id" form:"id" binding:"required"`
+	OTP    string `json:"otp" form:"otp" binding:"required"`
+}

@@ -24,6 +24,7 @@ type CompRepository interface {
 	GetAllTransaction() ([]*dto.Transaction, error)
 
 	RequestResetPassword(data dto.User, otp string) error
+	VerifyResetPassword(data dto.OTPVerifyToken) (*dto.OTPVerifyToken, error)
 }
 
 type compRepository struct {

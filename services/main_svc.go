@@ -22,6 +22,7 @@ type CompService interface {
 	GetTransactionHistory() ([]*dto.Transaction, error)
 
 	RequestResetPassword(username string) (*dto.User, error)
+	VerifyResetPassword(data dto.OTPVerifyToken) (*string, error)
 }
 
 type compServices struct {

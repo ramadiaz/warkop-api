@@ -133,3 +133,16 @@ func (r *compRepository) RequestResetPassword(data dto.User, otp string) error {
 
 	return nil
 }
+
+func (r *compRepository) VerifyResetPassword(data dto.OTPVerifyToken) (*dto.OTPVerifyToken, error) {
+	var d dto.OTPVerifyToken
+
+	err := r.DB.QueryRow(`
+		SELECT user_id, otp FROM reset_otp WHERE user_id = $1
+	`, data.UserID).Scan(&d.UserID, &d.OTP)
+	if err != nil {
+		return nil, err
+	}
+
+	return &d, nil
+}

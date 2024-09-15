@@ -15,6 +15,7 @@ type CompRepository interface {
 	GetUserData(username string) (*dto.User, error)
 
 	RegisterMenu(data dto.Menu) error
+	GetAllMenu() ([]*dto.Menu, error)
 }
 
 type compRepository struct {
@@ -83,16 +84,22 @@ func NewComponentRepository(DB *sql.DB) *compRepository {
 	}
 
 	_, err = db.Exec(`
-		CREATE TYPE menu_type AS ENUM ('Food', 'Drink', 'Snack', 'Other');
-
+		DO $$
+		BEGIN
+			IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'menu_type') THEN
+				CREATE TYPE menu_type AS ENUM ('Food', 'Drink', 'Snack', 'Other');
+			END IF;
+		END $$;
+		
 		CREATE TABLE IF NOT EXISTS menu (
-			id 			BIGSERIAL PRIMARY KEY NOT NULL,
-			name 		VARCHAR(255) NOT NULL,
-			type 		menu_type NOT NULL,
-			price 		INT NOT NULL DEFAULT 0,
-			stock 		INT NOT NULL DEFAULT 0,
+			id          BIGSERIAL PRIMARY KEY NOT NULL,
+			name        VARCHAR(255) NOT NULL,
+			type        menu_type NOT NULL,
+			price       INT NOT NULL DEFAULT 0,
+			stock       INT NOT NULL DEFAULT 0,
 			created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-		);`)
+		);
+	`)
 	if err != nil {
 		log.Fatalf("Error creating table: %v", err)
 	}

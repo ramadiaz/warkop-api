@@ -15,6 +15,7 @@ type CompService interface {
 	LoginUser(username string, password string) (*string, error)
 
 	RegisterMenu(data dto.Menu) error
+	GetAllMenu() ([]*dto.Menu, error)
 }
 
 type compServices struct {

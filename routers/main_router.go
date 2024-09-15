@@ -36,5 +36,6 @@ func CompRouter(api *gin.RouterGroup) {
 	menuRouter := api.Group("/menu")
 	{
 		menuRouter.POST("/register", compHandler.RegisterMenu)
+		menuRouter.GET("/getall", compHandler.GetAllMenu)
 	}
 }

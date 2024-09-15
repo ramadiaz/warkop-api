@@ -41,12 +41,13 @@ func CompRouter(api *gin.RouterGroup) {
 		menuRouter.POST("/register", compHandler.RegisterMenu)
 		menuRouter.GET("/getall", compHandler.GetAllMenu)
 	}
-	
+
 	transactionRouter := api.Group("/transaction")
 	transactionRouter.Use(middleware.APIKeyAuth(config.InitDB()))
 	transactionRouter.Use(middleware.AuthMiddleware())
 	{
 		transactionRouter.POST("/register", compHandler.RegisterTransaction)
+		transactionRouter.GET("/get", compHandler.GetTransaction)
 	}
 
 }

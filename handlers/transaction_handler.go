@@ -29,3 +29,15 @@ func (h *compHandlers) RegisterTransaction(c *gin.Context) {
 
 	c.JSON(http.StatusOK, dto.Response{Status: http.StatusOK, Message: "Transaction recorded", Body: result})
 }
+
+func (h *compHandlers) GetTransaction(c *gin.Context) {
+	id := c.Query("id")
+
+	data, err := h.service.GetTransaction(id)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, dto.Response{Status: http.StatusInternalServerError, Error: err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, dto.Response{Status: http.StatusOK, Message: "Data retrieved successfully", Body: data})
+}

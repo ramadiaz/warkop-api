@@ -135,6 +135,11 @@ func (h *compHandlers) VerifyResetPassword(c *gin.Context) {
 		} else if err.Error() == "401" {
 			c.JSON(http.StatusUnauthorized, dto.Response{Status: http.StatusUnauthorized, Error: "Invalid OTP"})
 			return
+		} else if pqErr, ok := err.(*pq.Error); ok {
+			if pqErr.Code == "22P02" {
+				c.JSON(http.StatusNotFound, dto.Response{Status: http.StatusNotFound, Error: "Token Invalid"})
+				return
+			}
 		} else {
 			c.JSON(http.StatusInternalServerError, dto.Response{Status: http.StatusInternalServerError, Error: err.Error()})
 			return

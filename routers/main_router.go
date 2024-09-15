@@ -25,6 +25,7 @@ func CompRouter(api *gin.RouterGroup) {
 	{
 		userRouter.POST("/register", compHandler.RegisterUser)
 		userRouter.POST("/login", compHandler.LoginUser)
+		userRouter.POST("/request-reset", compHandler.RequestResetPassword)
 
 		verificationRouter := userRouter.Group("/verif")
 		{

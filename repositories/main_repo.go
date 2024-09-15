@@ -22,6 +22,8 @@ type CompRepository interface {
 	GetTransaction(id string) (*dto.Transaction, error) 
 	GetTransactionItem(id string) ([]*dto.TransactionItem, error)
 	GetAllTransaction() ([]*dto.Transaction, error)
+
+	RequestResetPassword(data dto.User, otp string) error
 }
 
 type compRepository struct {
@@ -72,6 +74,17 @@ func NewComponentRepository(DB *sql.DB) *compRepository {
 			id 			BIGSERIAL PRIMARY KEY NOT NULL,
 			user_id 	UUID NOT NULL,
 			token 		VARCHAR(255) NOT NULL,
+			expired_at  TIMESTAMP NOT NULL
+		);`)
+	if err != nil {
+		log.Fatalf("Error creating table: %v", err)
+	}
+
+	_, err = db.Exec(`
+		CREATE TABLE IF NOT EXISTS reset_otp (
+			id 			BIGSERIAL PRIMARY KEY NOT NULL,
+			user_id 	UUID NOT NULL,
+			otp 		INT NOT NULL,
 			expired_at  TIMESTAMP NOT NULL
 		);`)
 	if err != nil {

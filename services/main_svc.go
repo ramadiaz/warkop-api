@@ -20,6 +20,8 @@ type CompService interface {
 	RegisterTransaction(data dto.Transaction) (*dto.Transaction, error)
 	GetTransaction(id string) (*dto.Transaction, error)
 	GetTransactionHistory() ([]*dto.Transaction, error)
+
+	RequestResetPassword(username string) (*dto.User, error)
 }
 
 type compServices struct {

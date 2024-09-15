@@ -102,3 +102,34 @@ func (r *compRepository) GetUserData(username string) (*dto.User, error) {
 
 	return &data, nil
 }
+
+func (r *compRepository) RequestResetPassword(data dto.User, otp string) error {
+	tx, err := r.DB.Begin()
+	if err != nil {
+		return err
+	}
+
+	_, err = tx.Exec(`
+		DELETE FROM reset_otp WHERE user_id = $1::uuid
+	`, data.ID)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	_, err = tx.Exec(`
+		INSERT INTO reset_otp (user_id, otp, expired_at) VALUES($1, $2, NOW() + INTERVAL '2 hours')
+	`, data.ID, otp)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	return nil
+}

@@ -91,8 +91,26 @@ func (h *compHandlers) LoginUser(c *gin.Context) {
 			return
 		} else {
 			c.JSON(http.StatusInternalServerError, dto.Response{Status: http.StatusInternalServerError, Error: err.Error()})
+			return
 		}
 	}
 
 	c.JSON(http.StatusOK, dto.Response{Status: http.StatusOK, Message: "Successfully login", Body: token})
+}
+
+func (h *compHandlers) RequestResetPassword(c *gin.Context) {
+	username := c.Query("un")
+
+	data, err := h.service.RequestResetPassword(username)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			c.JSON(http.StatusNotFound, dto.Response{Status: http.StatusNotFound, Error: "Username not found"})
+			return
+		}
+
+		c.JSON(http.StatusInternalServerError, dto.Response{Status: http.StatusInternalServerError, Error: err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, dto.Response{Status: http.StatusOK, Message: "OTP Code successfully sent to your email!", Body: data.ID})
 }

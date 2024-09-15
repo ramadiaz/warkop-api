@@ -28,8 +28,26 @@ func (r *compRepository) RegisterToken(data dto.User) (*string, error) {
 		return nil, err
 	}
 
-	_, err = r.DB.Exec("UPDATE verification_token SET token = $1, expired_at = NOW() + INTERVAL '9 hours' WHERE user_id = $2", token, data.ID)
+	tx, err := r.DB.Begin()
 	if err != nil {
+		return nil, err
+	}
+
+	_, err = tx.Exec("DELETE FROM verification_token WHERE user_id = $1", data.ID)
+	if err != nil {
+		tx.Rollback()
+		return nil, err
+	}
+
+	_, err = tx.Exec("INSERT INTO verification_token (user_id, token, expired_at) VALUES($1, $2, NOW() + INTERVAL '9 hours')", data.ID, token)
+	if err != nil {
+		tx.Rollback()
+		return nil, err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		tx.Rollback()
 		return nil, err
 	}
 

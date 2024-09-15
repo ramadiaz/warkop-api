@@ -22,7 +22,6 @@ func CompRouter(api *gin.RouterGroup) {
 
 	userRouter := api.Group("/user")
 	userRouter.Use(middleware.APIKeyAuth(config.InitDB()))
-	userRouter.Use(middleware.AuthMiddleware())
 	{
 		userRouter.POST("/register", compHandler.RegisterUser)
 		userRouter.POST("/login", compHandler.LoginUser)

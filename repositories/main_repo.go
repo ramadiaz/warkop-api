@@ -80,6 +80,45 @@ func NewComponentRepository(DB *sql.DB) *compRepository {
 		log.Fatalf("Error creating table: %v", err)
 	}
 
+	_, err = db.Exec(`
+		CREATE TYPE menu_type AS ENUM ('Food', 'Drink', 'Snack', 'Other');
+
+		CREATE TABLE IF NOT EXISTS menu (
+			id 			BIGSERIAL PRIMARY KEY NOT NULL,
+			name 		VARCHAR(255) NOT NULL,
+			type 		menu_type NOT NULL,
+			price 		INT NOT NULL DEFAULT 0,
+			stock 		INT NOT NULL DEFAULT 0,
+			created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+		);`)
+	if err != nil {
+		log.Fatalf("Error creating table: %v", err)
+	}
+
+	_, err = db.Exec(`
+		CREATE TABLE IF NOT EXISTS transaction (
+			id 			BIGSERIAL PRIMARY KEY NOT NULL,
+			cashier_id 	VARCHAR(255) NOT NULL,
+			total 		INT NOT NULL,
+			cash        INT NOT NULL,
+			created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+		);`)
+	if err != nil {
+		log.Fatalf("Error creating table: %v", err)
+	}
+
+	_, err = db.Exec(`
+		CREATE TABLE IF NOT EXISTS transaction_item (
+			id 				BIGSERIAL PRIMARY KEY NOT NULL,
+			transaction_id 	INT NOT NULL,
+			menu_id 		INT NOT NULL,
+			quantity 		INT NOT NULL,
+			created_at  	TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+		);`)
+	if err != nil {
+		log.Fatalf("Error creating table: %v", err)
+	}
+
 	return &compRepository{
 		DB: db,
 	}

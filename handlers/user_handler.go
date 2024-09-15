@@ -89,7 +89,7 @@ func (h *compHandlers) LoginUser(c *gin.Context) {
 			c.JSON(http.StatusUnauthorized, dto.Response{Status: http.StatusUnauthorized, Error: "Invalid username or password"})
 			return
 		} else if err.Error() == "403" {
-			c.JSON(http.StatusUnauthorized, dto.Response{Status: http.StatusUnauthorized, Error: "Your email is not verified"})
+			c.JSON(http.StatusForbidden, dto.Response{Status: http.StatusForbidden, Error: "Your email is not verified"})
 			return
 		} else {
 			c.JSON(http.StatusInternalServerError, dto.Response{Status: http.StatusInternalServerError, Error: err.Error()})

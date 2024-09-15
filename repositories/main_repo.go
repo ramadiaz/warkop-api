@@ -21,6 +21,7 @@ type CompRepository interface {
 	RegisterTransactionItem(data dto.TransactionItem) error 
 	GetTransaction(id string) (*dto.Transaction, error) 
 	GetTransactionItem(id string) ([]*dto.TransactionItem, error)
+	GetAllTransaction() ([]*dto.Transaction, error)
 }
 
 type compRepository struct {

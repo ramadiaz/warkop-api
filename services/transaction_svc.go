@@ -1,6 +1,9 @@
 package services
 
-import "warkop-api/dto"
+import (
+	"strconv"
+	"warkop-api/dto"
+)
 
 func (s *compServices) RegisterTransaction(data dto.Transaction) (*dto.Transaction, error) {
 	id, err := s.repo.RegisterTransaction(data)
@@ -34,6 +37,24 @@ func (s *compServices) GetTransaction(id string) (*dto.Transaction, error) {
 	}
 
 	data.Menus = item_data
-	
+
 	return data, nil
+}
+
+func (s *compServices) GetTransactionHistory() ([]*dto.Transaction, error) {
+	data, err := s.repo.GetAllTransaction()
+	if err != nil {
+		return nil, err
+	}
+
+	for _, item := range data {
+		item_data, err := s.repo.GetTransactionItem(strconv.Itoa(int(item.ID)))
+		if err != nil {
+			return nil, err
+		}
+
+		item.Menus = item_data
+	}
+
+	return data, err
 }

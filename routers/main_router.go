@@ -47,6 +47,7 @@ func CompRouter(api *gin.RouterGroup) {
 	{
 		transactionRouter.POST("/register", compHandler.RegisterTransaction)
 		transactionRouter.GET("/get", compHandler.GetTransaction)
+		transactionRouter.GET("/history", compHandler.GetTransactionHistory)
 	}
 
 }

@@ -41,3 +41,13 @@ func (h *compHandlers) GetTransaction(c *gin.Context) {
 
 	c.JSON(http.StatusOK, dto.Response{Status: http.StatusOK, Message: "Data retrieved successfully", Body: data})
 }
+
+func (h *compHandlers) GetTransactionHistory(c *gin.Context) {
+	data, err := h.service.GetTransactionHistory()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, dto.Response{Status: http.StatusInternalServerError, Error: err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, dto.Response{Status: http.StatusOK, Message: "Data retrieved successfully", Body: data})
+}

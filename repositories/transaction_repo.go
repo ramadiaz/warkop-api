@@ -74,3 +74,33 @@ func (r *compRepository) GetTransactionItem(id string) ([]*dto.TransactionItem, 
 
 	return data, nil
 }
+
+func (r *compRepository) GetAllTransaction() ([]*dto.Transaction, error) {
+	var data []*dto.Transaction
+
+	rows, err := r.DB.Query(`
+		SELECT transaction.*, users.username 
+		FROM transaction 
+		JOIN users ON users.id = transaction.cashier_id::uuid 
+	`)
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	for rows.Next() {
+		var tx dto.Transaction
+
+		err := rows.Scan(&tx.ID, &tx.CashierID, &tx.Total, &tx.Cash, &tx.CreatedAt, &tx.Cashier)
+		if err != nil {
+			return nil, err
+		}
+
+		tx.Change = tx.Cash - tx.Total
+
+		data = append(data, &tx)
+	}
+
+	return data, nil
+}

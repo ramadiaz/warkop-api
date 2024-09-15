@@ -146,3 +146,30 @@ func (r *compRepository) VerifyResetPassword(data dto.OTPVerifyToken) (*dto.OTPV
 
 	return &d, nil
 }
+
+func (r *compRepository) ResetPassword(user_data dto.User) error {
+	tx, err := r.DB.Begin()
+	if err != nil {
+		return err
+	}
+
+	_, err = tx.Exec("DELETE FROM reset_otp WHERE user_id = $1::uuid", user_data.ID)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	_, err = tx.Exec("UPDATE users SET password = $1 WHERE id = $2::uuid", user_data.Password, user_data.ID)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	return nil
+}

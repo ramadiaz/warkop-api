@@ -3,8 +3,10 @@ package handlers
 import (
 	"database/sql"
 	"net/http"
+	"os"
 	"warkop-api/dto"
 
+	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 	"github.com/lib/pq"
 )
@@ -147,4 +149,46 @@ func (h *compHandlers) VerifyResetPassword(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, dto.Response{Status: http.StatusOK, Message: "OTP Code verified", Body: result})
+}
+
+func (h *compHandlers) ResetPassword(c *gin.Context) {
+	user_token := c.Query("token")
+	password := c.Request.FormValue("password")
+
+	secret := os.Getenv("JWT_SECRET")
+	if secret == "" {
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Error getting secret"})
+		return
+	}
+
+	var secretKey = []byte(secret)
+
+	claims := jwt.MapClaims{}
+	token, err := jwt.ParseWithClaims(user_token, claims, func(token *jwt.Token) (interface{}, error) {
+		return secretKey, nil
+	})
+
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid authorization token"})
+		return
+	}
+
+	if !token.Valid {
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid authorization token"})
+		return
+	}
+
+	user_data := dto.User{
+		ID:       claims["id"].(string),
+		Password: password,
+	}
+
+	err = h.service.ResetPassword(user_data)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, dto.Response{Status: http.StatusInternalServerError, Error: err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, dto.Response{Status: http.StatusOK, Message: "Password successfully reseted"})
+
 }

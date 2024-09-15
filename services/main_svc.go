@@ -23,6 +23,7 @@ type CompService interface {
 
 	RequestResetPassword(username string) (*dto.User, error)
 	VerifyResetPassword(data dto.OTPVerifyToken) (*string, error)
+	ResetPassword(user_data dto.User) error
 }
 
 type compServices struct {

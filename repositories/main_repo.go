@@ -25,6 +25,7 @@ type CompRepository interface {
 
 	RequestResetPassword(data dto.User, otp string) error
 	VerifyResetPassword(data dto.OTPVerifyToken) (*dto.OTPVerifyToken, error)
+	ResetPassword(user_data dto.User) error
 }
 
 type compRepository struct {

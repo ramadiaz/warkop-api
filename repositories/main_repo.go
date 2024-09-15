@@ -16,6 +16,9 @@ type CompRepository interface {
 
 	RegisterMenu(data dto.Menu) error
 	GetAllMenu() ([]*dto.Menu, error)
+
+	RegisterTransaction(data dto.Transaction) (*int64, error)
+	RegisterTransactionItem(data dto.TransactionItem) error 
 }
 
 type compRepository struct {
@@ -90,7 +93,7 @@ func NewComponentRepository(DB *sql.DB) *compRepository {
 				CREATE TYPE menu_type AS ENUM ('Food', 'Drink', 'Snack', 'Other');
 			END IF;
 		END $$;
-		
+
 		CREATE TABLE IF NOT EXISTS menu (
 			id          BIGSERIAL PRIMARY KEY NOT NULL,
 			name        VARCHAR(255) NOT NULL,

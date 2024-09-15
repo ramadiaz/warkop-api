@@ -2,10 +2,10 @@ package services
 
 import "warkop-api/dto"
 
-func (s *compServices) RegisterTransaction(data dto.Transaction) error {
+func (s *compServices) RegisterTransaction(data dto.Transaction) (*dto.Transaction, error) {
 	id, err := s.repo.RegisterTransaction(data)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	for _, item := range data.Menus {
@@ -13,9 +13,11 @@ func (s *compServices) RegisterTransaction(data dto.Transaction) error {
 
 		err := s.repo.RegisterTransactionItem(item)
 		if err != nil {
-			return err
+			return nil, err
 		}
 	}
 
-	return nil
+	data.ID = *id
+
+	return &data, nil
 }

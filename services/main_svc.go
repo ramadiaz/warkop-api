@@ -17,7 +17,7 @@ type CompService interface {
 	RegisterMenu(data dto.Menu) error
 	GetAllMenu() ([]*dto.Menu, error)
 
-	RegisterTransaction(data dto.Transaction) error
+	RegisterTransaction(data dto.Transaction) (*dto.Transaction, error)
 }
 
 type compServices struct {

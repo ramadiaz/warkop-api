@@ -14,6 +14,7 @@ type CompRepository interface {
 	VerifyAccount(token string) error
 	GetUserData(username string) (*dto.User, error)
 	UploadUserProfile(data dto.User, image_url string) error
+	GetUserProfile(id string) (*string, error)
 
 	RegisterMenu(data dto.Menu) error
 	GetAllMenu() ([]*dto.Menu, error)

@@ -188,3 +188,16 @@ func (r *compRepository) UploadUserProfile(data dto.User, image_url string) erro
 
 	return nil
 }
+
+func (r *compRepository) GetUserProfile(id string) (*string, error) {
+	var image_url string
+
+	err := r.DB.QueryRow(`
+		SELECT image_url FROM users_image WHERE user_id = $1
+	`, id).Scan(&image_url)
+	if err != nil {
+		return nil, err
+	}
+
+	return &image_url, nil
+}

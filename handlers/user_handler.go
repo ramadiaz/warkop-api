@@ -236,3 +236,20 @@ func (h *compHandlers) UploadUserProfile(c *gin.Context) {
 
 	c.JSON(http.StatusOK, dto.Response{Status: http.StatusOK, Message: "Drawing file successfully saved!"})
 }
+
+func (h *compHandlers) GetUserProfile(c *gin.Context) {
+	id := c.Query("id")
+
+	data, err := h.service.GetUserProfile(id)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			c.JSON(http.StatusNotFound, dto.Response{Status: http.StatusNotFound, Error: "User profile image not found"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, dto.Response{Status: http.StatusInternalServerError, Error: err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, dto.Response{Status: http.StatusOK, Message: "Profile image successfully retrieved!", Body: data})
+
+}

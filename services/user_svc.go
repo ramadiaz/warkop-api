@@ -145,6 +145,10 @@ func (s *compServices) UploadUserProfile(data dto.User, image_url string) error 
 	return s.repo.UploadUserProfile(data, image_url)
 }
 
+func (s *compServices) GetUserProfile(id string) (*string, error) {
+	return s.repo.GetUserProfile(id)
+}
+
 func (s *compServices) GenerateVerificationEmail(username string) error {
 	base_url := os.Getenv("FRONT_END_BASE_URL")
 

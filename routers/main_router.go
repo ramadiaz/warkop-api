@@ -17,6 +17,8 @@ func CompRouter(api *gin.RouterGroup) {
 	compService := services.NewService(compRepository)
 	compHandler := handlers.NewCompHandlers(compService)
 
+	api.Static("/user/image", "./public/user/image")
+
 	api.GET("/ping", compHandler.Ping)
 	api.POST("/key/register", compHandler.GenerateAPIKey)
 
@@ -39,6 +41,7 @@ func CompRouter(api *gin.RouterGroup) {
 		profileRouter.Use(middleware.AuthMiddleware())
 		{
 			profileRouter.POST("/upload", compHandler.UploadUserProfile)
+			profileRouter.GET("/get", compHandler.GetUserProfile)
 		}
 	}
 

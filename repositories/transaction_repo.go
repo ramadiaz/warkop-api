@@ -15,11 +15,31 @@ func (r *compRepository) RegisterTransaction(data dto.Transaction) (*int64, erro
 }
 
 func (r *compRepository) RegisterTransactionItem(data dto.TransactionItem) error {
-	_, err := r.DB.Exec(
+	tx, err := r.DB.Begin()
+	if err != nil {
+		return err
+	}
+
+	_, err = tx.Exec(
 		`INSERT INTO transaction_item (transaction_id, menu_id, quantity) VALUES($1, $2, $3)`,
 		data.TransactionID, data.MenuID, data.Quantity,
 	)
 	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	_, err = tx.Exec(`
+		UPDATE menu SET stock = (SELECT stock FROM menu WHERE id = $1) - $2 WHERE id = $1
+	`, data.MenuID, data.Quantity)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		tx.Rollback()
 		return err
 	}
 

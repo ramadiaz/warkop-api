@@ -2,9 +2,13 @@ package handlers
 
 import (
 	"database/sql"
+	"fmt"
 	"net/http"
 	"os"
+	"path/filepath"
+	"time"
 	"warkop-api/dto"
+	"warkop-api/helpers"
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
@@ -190,5 +194,45 @@ func (h *compHandlers) ResetPassword(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, dto.Response{Status: http.StatusOK, Message: "Password successfully reseted"})
+}
 
+func (h *compHandlers) UploadUserProfile(c *gin.Context) {
+	var file_url *string
+
+	err := c.Request.ParseMultipartForm(10 << 20)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.Response{Status: http.StatusBadRequest, Error: err.Error()})
+		return
+	}
+
+	_, header, err := c.Request.FormFile("file")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.Response{Status: http.StatusBadRequest, Error: "Bad Request"})
+		return
+	}
+
+	filename := fmt.Sprintf("%d%s", time.Now().UnixNano(), filepath.Ext(header.Filename))
+
+	filePath := filepath.Join("public", "user", "image", filename)
+	err = c.SaveUploadedFile(header, filePath)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, dto.Response{Status: http.StatusInternalServerError, Error: "Failed to save image"})
+		return
+	} else {
+		file_url_new := "/user/image/" + filename
+
+		if file_url_new != "" {
+			file_url = &file_url_new
+		}
+	}
+
+	user_data := helpers.GetUserData(c)
+
+	err = h.service.UploadUserProfile(user_data, *file_url)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, dto.Response{Status: http.StatusInternalServerError, Error: err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, dto.Response{Status: http.StatusOK, Message: "Drawing file successfully saved!"})
 }

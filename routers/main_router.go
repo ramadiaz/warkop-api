@@ -34,6 +34,12 @@ func CompRouter(api *gin.RouterGroup) {
 			verificationRouter.POST("/resend", compHandler.ResendVerification)
 			verificationRouter.POST("/verify", compHandler.VerifyAccount)
 		}
+
+		profileRouter := userRouter.Group("/profile")
+		profileRouter.Use(middleware.AuthMiddleware())
+		{
+			profileRouter.POST("/upload", compHandler.UploadUserProfile)
+		}
 	}
 
 	menuRouter := api.Group("/menu")

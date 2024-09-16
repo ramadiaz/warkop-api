@@ -173,3 +173,18 @@ func (r *compRepository) ResetPassword(user_data dto.User) error {
 
 	return nil
 }
+
+func (r *compRepository) UploadUserProfile(data dto.User, image_url string) error {
+	_, err := r.DB.Exec(`
+		INSERT INTO users_image (user_id, image_url)
+		VALUES ($1, $2)
+		ON CONFLICT (user_id)
+		DO UPDATE SET
+			image_url = $2;
+	`, data.ID, image_url)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

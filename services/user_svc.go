@@ -141,6 +141,10 @@ func (s *compServices) ResetPassword(user_data dto.User) error {
 	return s.repo.ResetPassword(user_data)
 }
 
+func (s *compServices) UploadUserProfile(data dto.User, image_url string) error {
+	return s.repo.UploadUserProfile(data, image_url)
+}
+
 func (s *compServices) GenerateVerificationEmail(username string) error {
 	base_url := os.Getenv("FRONT_END_BASE_URL")
 

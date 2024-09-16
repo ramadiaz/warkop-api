@@ -13,13 +13,14 @@ type CompRepository interface {
 	RegisterAPIKey(name string, secret string) error
 	VerifyAccount(token string) error
 	GetUserData(username string) (*dto.User, error)
+	UploadUserProfile(data dto.User, image_url string) error
 
 	RegisterMenu(data dto.Menu) error
 	GetAllMenu() ([]*dto.Menu, error)
 
 	RegisterTransaction(data dto.Transaction) (*int64, error)
-	RegisterTransactionItem(data dto.TransactionItem) error 
-	GetTransaction(id string) (*dto.Transaction, error) 
+	RegisterTransactionItem(data dto.TransactionItem) error
+	GetTransaction(id string) (*dto.Transaction, error)
 	GetTransactionItem(id string) ([]*dto.TransactionItem, error)
 	GetAllTransaction() ([]*dto.Transaction, error)
 
@@ -143,6 +144,17 @@ func NewComponentRepository(DB *sql.DB) *compRepository {
 			transaction_id 	INT NOT NULL,
 			menu_id 		INT NOT NULL,
 			quantity 		INT NOT NULL,
+			created_at  	TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+		);`)
+	if err != nil {
+		log.Fatalf("Error creating table: %v", err)
+	}
+
+	_, err = db.Exec(`
+		CREATE TABLE IF NOT EXISTS users_image (
+			id 				BIGSERIAL PRIMARY KEY NOT NULL,
+			user_id 		VARCHAR(255) UNIQUE NOT NULL,
+			image_url 		VARCHAR(255) NOT NULL,
 			created_at  	TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 		);`)
 	if err != nil {

@@ -22,12 +22,15 @@ type CompRepository interface {
 	RegisterTransaction(data dto.Transaction) (*int64, error)
 	RegisterTransactionItem(data dto.TransactionItem) error
 	GetTransaction(id string) (*dto.Transaction, error)
+	GetTransactionItemInTx(tx *sql.Tx, id string) ([]*dto.TransactionItem, error)
 	GetTransactionItem(id string) ([]*dto.TransactionItem, error)
 	GetAllTransaction() ([]*dto.Transaction, error)
 
 	RequestResetPassword(data dto.User, otp string) error
 	VerifyResetPassword(data dto.OTPVerifyToken) (*dto.OTPVerifyToken, error)
 	ResetPassword(user_data dto.User) error
+
+	BeginTransaction() (*sql.Tx, error)
 }
 
 type compRepository struct {

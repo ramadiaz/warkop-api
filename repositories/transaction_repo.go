@@ -1,6 +1,9 @@
 package repositories
 
-import "warkop-api/dto"
+import (
+	"database/sql"
+	"warkop-api/dto"
+)
 
 func (r *compRepository) RegisterTransaction(data dto.Transaction) (*int64, error) {
 	var id int64
@@ -89,6 +92,36 @@ func (r *compRepository) GetTransactionItem(id string) ([]*dto.TransactionItem, 
 
 		item.Amount = int64(item.Quantity) * item.Price
 
+		data = append(data, &item)
+	}
+
+	return data, nil
+}
+
+func (r *compRepository) GetTransactionItemInTx(tx *sql.Tx, id string) ([]*dto.TransactionItem, error) {
+	var data []*dto.TransactionItem
+
+	rows, err := tx.Query(`
+		SELECT transaction_item.*, menu.name, menu.price 
+		FROM transaction_item 
+		JOIN menu ON menu.id = transaction_item.menu_id 
+		WHERE transaction_item.transaction_id = $1;
+	`, id)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil
+		}
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var item dto.TransactionItem
+		err := rows.Scan(&item.ID, &item.TransactionID, &item.MenuID, &item.Quantity, &item.CreatedAt, &item.Name, &item.Price)
+		if err != nil {
+			return nil, err
+		}
+		item.Amount = int64(item.Quantity) * item.Price
 		data = append(data, &item)
 	}
 

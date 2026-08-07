@@ -1,11 +1,11 @@
 package repositories
 
-import "database/sql"
+import "gorm.io/gorm"
 
-func (r *compRepository) BeginTransaction() (*sql.Tx, error) {
-	tx, err := r.DB.Begin()
-	if err != nil {
-		return nil, err
+func (r *compRepository) BeginTransaction() (*gorm.DB, error) {
+	tx := r.DB.Begin()
+	if tx.Error != nil {
+		return nil, tx.Error
 	}
 	return tx, nil
 }

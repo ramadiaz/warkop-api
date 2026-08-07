@@ -49,21 +49,21 @@ func (s *compServices) GetTransactionHistory() ([]*dto.Transaction, error) {
 
 	tx, err := s.repo.BeginTransaction()
 	if err != nil {
-		tx.Rollback()
 		return nil, err
 	}
 
 	for _, item := range data {
 		item_data, err := s.repo.GetTransactionItemInTx(tx, strconv.Itoa(int(item.ID)))
 		if err != nil {
+			tx.Rollback()
 			return nil, err
 		}
 		item.Menus = item_data
 	}
 
-	if err := tx.Commit(); err != nil {
+	if err := tx.Commit().Error; err != nil {
 		return nil, err
 	}
 
-	return data, err
+	return data, nil
 }

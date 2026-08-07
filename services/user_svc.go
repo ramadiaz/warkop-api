@@ -1,7 +1,6 @@
 package services
 
 import (
-	"database/sql"
 	"errors"
 	"fmt"
 	"net/http"
@@ -12,6 +11,7 @@ import (
 	"warkop-api/helpers"
 
 	"github.com/dgrijalva/jwt-go"
+	"gorm.io/gorm"
 )
 
 func (s *compServices) RegisterUser(data dto.User) error {
@@ -63,7 +63,7 @@ func (s *compServices) VerifyAccount(token string) error {
 func (s *compServices) LoginUser(username string, password string) (*string, error) {
 	data, err := s.repo.GetUserData(username)
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, errors.New(strconv.Itoa(http.StatusNotFound))
 		}
 		return nil, err

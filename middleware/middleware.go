@@ -1,16 +1,17 @@
 package middleware
 
 import (
-	"database/sql"
 	"net/http"
 	"net/url"
 	"os"
 	"strings"
 	"warkop-api/dto"
+	"warkop-api/models"
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 	"github.com/mssola/user_agent"
+	"gorm.io/gorm"
 )
 
 func AuthMiddleware() gin.HandlerFunc {
@@ -68,7 +69,7 @@ func AuthMiddleware() gin.HandlerFunc {
 	}
 }
 
-func ClientTracker(db *sql.DB) gin.HandlerFunc {
+func ClientTracker(db *gorm.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		clientIP := c.ClientIP()
 
@@ -86,7 +87,17 @@ func ClientTracker(db *sql.DB) gin.HandlerFunc {
 			RawQuery: rawQuery,
 		}
 
-		_, err := db.Exec("INSERT INTO client_track (ip, browser, version, os, device, origin, api) VALUES($1, $2, $3, $4, $5, $6, $7)", clientIP, name, version, ua.OS(), ua.Platform(), referer, fullURL.String())
+		clientTrack := models.ClientTrack{
+			IP:      clientIP,
+			Browser: name,
+			Version: version,
+			OS:      ua.OS(),
+			Device:  ua.Platform(),
+			Origin:  referer,
+			API:     fullURL.String(),
+		}
+
+		err := db.Create(&clientTrack).Error
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
@@ -96,7 +107,7 @@ func ClientTracker(db *sql.DB) gin.HandlerFunc {
 	}
 }
 
-func APIKeyAuth(db *sql.DB) gin.HandlerFunc {
+func APIKeyAuth(db *gorm.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		apiKey := c.Request.Header.Get("x-authentication")
 
@@ -106,7 +117,7 @@ func APIKeyAuth(db *sql.DB) gin.HandlerFunc {
 		}
 
 		var exists bool
-		err := db.QueryRow("SELECT EXISTS(SELECT 1 FROM api_key WHERE token = $1)", apiKey).Scan(&exists)
+		err := db.Model(&models.APIKey{}).Select("count(*) > 0").Where("token = ?", apiKey).Find(&exists).Error
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
 			return

@@ -1,34 +1,37 @@
 package repositories
 
-import "warkop-api/dto"
+import (
+	"warkop-api/dto"
+	"warkop-api/models"
+)
 
 func (r *compRepository) RegisterMenu(data dto.Menu) error {
-	_, err := r.DB.Exec("INSERT INTO menu (name, type, price, stock) VALUES($1, $2, $3, $4)", data.Name, data.Type, data.Price, data.Stock)
-	if err != nil {
-		return err
+	menu := models.Menu{
+		Name:  data.Name,
+		Type:  data.Type,
+		Price: data.Price,
+		Stock: data.Stock,
 	}
-
-	return nil
+	return r.DB.Create(&menu).Error
 }
 
 func (r *compRepository) GetAllMenu() ([]*dto.Menu, error) {
-	rows, err := r.DB.Query("SELECT * FROM menu ORDER BY name ASC")
+	var dbMenus []models.Menu
+	err := r.DB.Order("name ASC").Find(&dbMenus).Error
 	if err != nil {
 		return nil, err
 	}
 
-	defer rows.Close()
-
 	var result []*dto.Menu
-
-	for rows.Next() {
-		var menu dto.Menu
-		err = rows.Scan(&menu.ID, &menu.Name, &menu.Type, &menu.Price, &menu.Stock, &menu.CreatedAt)
-		if err != nil {
-			return nil, err
-		}
-
-		result = append(result, &menu)
+	for _, menu := range dbMenus {
+		result = append(result, &dto.Menu{
+			ID:        int(menu.ID),
+			Name:      menu.Name,
+			Type:      menu.Type,
+			Price:     menu.Price,
+			Stock:     menu.Stock,
+			CreatedAt: menu.CreatedAt.Format("2006-01-02 15:04:05"),
+		})
 	}
 
 	return result, nil

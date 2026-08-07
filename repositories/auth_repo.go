@@ -1,10 +1,11 @@
 package repositories
 
-func (r *compRepository) RegisterAPIKey(name string, secret string) error {
-	_, err := r.DB.Exec("INSERT INTO api_key (name, token) VALUES($1, $2)", name, secret)
-	if err != nil {
-		return err
-	}
+import "warkop-api/models"
 
-	return nil
+func (r *compRepository) RegisterAPIKey(name string, secret string) error {
+	apiKey := models.APIKey{
+		Name:  name,
+		Token: secret,
+	}
+	return r.DB.Create(&apiKey).Error
 }

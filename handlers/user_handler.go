@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	"database/sql"
+	"errors"
 	"fmt"
 	"net/http"
 	"os"
@@ -13,6 +13,7 @@ import (
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 	"github.com/lib/pq"
+	"gorm.io/gorm"
 )
 
 func (h *compHandlers) RegisterUser(c *gin.Context) {
@@ -65,7 +66,7 @@ func (h *compHandlers) VerifyAccount(c *gin.Context) {
 
 	err := h.service.VerifyAccount(token)
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			c.JSON(http.StatusNotFound, dto.Response{Status: http.StatusNotFound, Error: "Invalid token"})
 			return
 		} else if err.Error() == "410" {
@@ -109,7 +110,7 @@ func (h *compHandlers) RequestResetPassword(c *gin.Context) {
 
 	data, err := h.service.RequestResetPassword(username)
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			c.JSON(http.StatusNotFound, dto.Response{Status: http.StatusNotFound, Error: "Username not found"})
 			return
 		}
@@ -132,7 +133,7 @@ func (h *compHandlers) VerifyResetPassword(c *gin.Context) {
 
 	result, err := h.service.VerifyResetPassword(data)
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			c.JSON(http.StatusNotFound, dto.Response{Status: http.StatusNotFound, Error: "Token Invalid"})
 			return
 		} else if err.Error() == "410" {
@@ -242,7 +243,7 @@ func (h *compHandlers) GetUserProfile(c *gin.Context) {
 
 	data, err := h.service.GetUserProfile(id)
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			c.JSON(http.StatusNotFound, dto.Response{Status: http.StatusNotFound, Error: "User profile image not found"})
 			return
 		}

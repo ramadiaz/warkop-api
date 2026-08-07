@@ -1,158 +1,169 @@
 package repositories
 
 import (
-	"database/sql"
+	"errors"
 	"warkop-api/dto"
+	"warkop-api/models"
+
+	"gorm.io/gorm"
 )
 
 func (r *compRepository) RegisterTransaction(data dto.Transaction) (*int64, error) {
-	var id int64
-	err := r.DB.QueryRow(
-		`INSERT INTO transaction (cashier_id, total, cash) VALUES($1, $2, $3) RETURNING id`, data.CashierID, data.Total, data.Cash,
-	).Scan(&id)
+	tx := models.Transaction{
+		CashierID: data.CashierID,
+		Total:     data.Total,
+		Cash:      data.Cash,
+	}
+
+	err := r.DB.Create(&tx).Error
 	if err != nil {
 		return nil, err
 	}
 
-	return &id, nil
+	return &tx.ID, nil
 }
 
 func (r *compRepository) RegisterTransactionItem(data dto.TransactionItem) error {
-	tx, err := r.DB.Begin()
-	if err != nil {
-		return err
-	}
+	return r.DB.Transaction(func(tx *gorm.DB) error {
+		item := models.TransactionItem{
+			TransactionID: data.TransactionID,
+			MenuID:        data.MenuID,
+			Quantity:      data.Quantity,
+		}
 
-	_, err = tx.Exec(
-		`INSERT INTO transaction_item (transaction_id, menu_id, quantity) VALUES($1, $2, $3)`,
-		data.TransactionID, data.MenuID, data.Quantity,
-	)
-	if err != nil {
-		tx.Rollback()
-		return err
-	}
+		err := tx.Create(&item).Error
+		if err != nil {
+			return err
+		}
 
-	_, err = tx.Exec(`
-		UPDATE menu SET stock = (SELECT stock FROM menu WHERE id = $1) - $2 WHERE id = $1
-	`, data.MenuID, data.Quantity)
-	if err != nil {
-		tx.Rollback()
-		return err
-	}
+		var menu models.Menu
+		err = tx.Where("id = ?", data.MenuID).First(&menu).Error
+		if err != nil {
+			return err
+		}
 
-	err = tx.Commit()
-	if err != nil {
-		tx.Rollback()
-		return err
-	}
-
-	return nil
+		newStock := menu.Stock - data.Quantity
+		return tx.Model(&menu).Update("stock", newStock).Error
+	})
 }
 
 func (r *compRepository) GetTransaction(id string) (*dto.Transaction, error) {
-	var data dto.Transaction
+	var tx models.Transaction
 
-	err := r.DB.QueryRow(`
-		SELECT transaction.*, users.username 
-		FROM transaction 
-		JOIN users ON users.id = transaction.cashier_id::uuid 
-		WHERE transaction.id = $1;
-	`, id).Scan(&data.ID, &data.CashierID, &data.Total, &data.Cash, &data.CreatedAt, &data.Cashier)
+	err := r.DB.Where("id = ?", id).First(&tx).Error
 	if err != nil {
 		return nil, err
 	}
 
-	data.Change = data.Cash - data.Total
+	var cashierUsername string
+	err = r.DB.Model(&models.User{}).Select("username").Where("id = ?", tx.CashierID).Scan(&cashierUsername).Error
+	if err != nil {
+		return nil, err
+	}
+
+	data := dto.Transaction{
+		ID:        tx.ID,
+		CashierID: tx.CashierID,
+		Cashier:   cashierUsername,
+		Total:     tx.Total,
+		Cash:      tx.Cash,
+		Change:    tx.Cash - tx.Total,
+		CreatedAt: tx.CreatedAt.Format("2006-01-02 15:04:05"),
+	}
 
 	return &data, nil
 }
 
 func (r *compRepository) GetTransactionItem(id string) ([]*dto.TransactionItem, error) {
-	var data []*dto.TransactionItem
+	var items []models.TransactionItem
 
-	rows, err := r.DB.Query(`
-		SELECT transaction_item.*, menu.name, menu.price 
-		FROM transaction_item 
-		JOIN menu ON menu.id = transaction_item.menu_id 
-		WHERE transaction_item.transaction_id = $1;
-	`, id)
+	err := r.DB.Where("transaction_id = ?", id).Find(&items).Error
 	if err != nil {
 		return nil, err
 	}
 
-	defer rows.Close()
-
-	for rows.Next() {
-		var item dto.TransactionItem
-
-		err := rows.Scan(&item.ID, &item.TransactionID, &item.MenuID, &item.Quantity, &item.CreatedAt, &item.Name, &item.Price)
+	var data []*dto.TransactionItem
+	for _, item := range items {
+		var menu models.Menu
+		err = r.DB.Where("id = ?", item.MenuID).First(&menu).Error
 		if err != nil {
 			return nil, err
 		}
 
-		item.Amount = int64(item.Quantity) * item.Price
-
-		data = append(data, &item)
+		data = append(data, &dto.TransactionItem{
+			ID:            int(item.ID),
+			TransactionID: item.TransactionID,
+			MenuID:        item.MenuID,
+			Name:          menu.Name,
+			Price:         int64(menu.Price),
+			Amount:        int64(item.Quantity) * int64(menu.Price),
+			Quantity:      item.Quantity,
+			CreatedAt:     item.CreatedAt.Format("2006-01-02 15:04:05"),
+		})
 	}
 
 	return data, nil
 }
 
-func (r *compRepository) GetTransactionItemInTx(tx *sql.Tx, id string) ([]*dto.TransactionItem, error) {
-	var data []*dto.TransactionItem
+func (r *compRepository) GetTransactionItemInTx(tx *gorm.DB, id string) ([]*dto.TransactionItem, error) {
+	var items []models.TransactionItem
 
-	rows, err := tx.Query(`
-		SELECT transaction_item.*, menu.name, menu.price 
-		FROM transaction_item 
-		JOIN menu ON menu.id = transaction_item.menu_id 
-		WHERE transaction_item.transaction_id = $1;
-	`, id)
+	err := tx.Where("transaction_id = ?", id).Find(&items).Error
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil
 		}
 		return nil, err
 	}
-	defer rows.Close()
 
-	for rows.Next() {
-		var item dto.TransactionItem
-		err := rows.Scan(&item.ID, &item.TransactionID, &item.MenuID, &item.Quantity, &item.CreatedAt, &item.Name, &item.Price)
+	var data []*dto.TransactionItem
+	for _, item := range items {
+		var menu models.Menu
+		err = tx.Where("id = ?", item.MenuID).First(&menu).Error
 		if err != nil {
 			return nil, err
 		}
-		item.Amount = int64(item.Quantity) * item.Price
-		data = append(data, &item)
+
+		data = append(data, &dto.TransactionItem{
+			ID:            int(item.ID),
+			TransactionID: item.TransactionID,
+			MenuID:        item.MenuID,
+			Name:          menu.Name,
+			Price:         int64(menu.Price),
+			Amount:        int64(item.Quantity) * int64(menu.Price),
+			Quantity:      item.Quantity,
+			CreatedAt:     item.CreatedAt.Format("2006-01-02 15:04:05"),
+		})
 	}
 
 	return data, nil
 }
 
 func (r *compRepository) GetAllTransaction() ([]*dto.Transaction, error) {
-	var data []*dto.Transaction
+	var transactions []models.Transaction
 
-	rows, err := r.DB.Query(`
-		SELECT transaction.*, users.username 
-		FROM transaction 
-		JOIN users ON users.id = transaction.cashier_id::uuid 
-	`)
+	err := r.DB.Find(&transactions).Error
 	if err != nil {
 		return nil, err
 	}
 
-	defer rows.Close()
-
-	for rows.Next() {
-		var tx dto.Transaction
-
-		err := rows.Scan(&tx.ID, &tx.CashierID, &tx.Total, &tx.Cash, &tx.CreatedAt, &tx.Cashier)
+	var data []*dto.Transaction
+	for _, tx := range transactions {
+		var cashierUsername string
+		err = r.DB.Model(&models.User{}).Select("username").Where("id = ?", tx.CashierID).Scan(&cashierUsername).Error
 		if err != nil {
 			return nil, err
 		}
 
-		tx.Change = tx.Cash - tx.Total
-
-		data = append(data, &tx)
+		data = append(data, &dto.Transaction{
+			ID:        tx.ID,
+			CashierID: tx.CashierID,
+			Cashier:   cashierUsername,
+			Total:     tx.Total,
+			Cash:      tx.Cash,
+			Change:    tx.Cash - tx.Total,
+			CreatedAt: tx.CreatedAt.Format("2006-01-02 15:04:05"),
+		})
 	}
 
 	return data, nil

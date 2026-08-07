@@ -7,19 +7,28 @@ import (
 	"time"
 	"warkop-api/dto"
 	"warkop-api/helpers"
+	"warkop-api/models"
+
+	"gorm.io/gorm"
 )
 
 func (r *compRepository) RegisterUser(data dto.User) (*string, error) {
-	var id string
-	err := r.DB.QueryRow(
-		`INSERT INTO users (username, email, password, first_name, last_name, contact, address) VALUES($1, $2, $3, $4, $5, $6, $7) RETURNING id`,
-		data.Username, data.Email, data.Password, data.FirstName, data.LastName, data.Contact, data.Address,
-	).Scan(&id)
+	user := models.User{
+		Username:  data.Username,
+		Email:     data.Email,
+		Password:  data.Password,
+		FirstName: data.FirstName,
+		LastName:  data.LastName,
+		Contact:   data.Contact,
+		Address:   data.Address,
+	}
+
+	err := r.DB.Create(&user).Error
 	if err != nil {
 		return nil, err
 	}
 
-	return &id, nil
+	return &user.ID, nil
 }
 
 func (r *compRepository) RegisterToken(data dto.User) (*string, error) {
@@ -28,26 +37,21 @@ func (r *compRepository) RegisterToken(data dto.User) (*string, error) {
 		return nil, err
 	}
 
-	tx, err := r.DB.Begin()
-	if err != nil {
-		return nil, err
-	}
+	err = r.DB.Transaction(func(tx *gorm.DB) error {
+		err := tx.Where("user_id = ?", data.ID).Delete(&models.VerificationToken{}).Error
+		if err != nil {
+			return err
+		}
 
-	_, err = tx.Exec("DELETE FROM verification_token WHERE user_id = $1", data.ID)
-	if err != nil {
-		tx.Rollback()
-		return nil, err
-	}
+		verificationToken := models.VerificationToken{
+			UserID:    data.ID,
+			Token:     token,
+			ExpiredAt: time.Now().Add(9 * time.Hour),
+		}
 
-	_, err = tx.Exec("INSERT INTO verification_token (user_id, token, expired_at) VALUES($1, $2, NOW() + INTERVAL '9 hours')", data.ID, token)
+		return tx.Create(&verificationToken).Error
+	})
 	if err != nil {
-		tx.Rollback()
-		return nil, err
-	}
-
-	err = tx.Commit()
-	if err != nil {
-		tx.Rollback()
 		return nil, err
 	}
 
@@ -55,37 +59,30 @@ func (r *compRepository) RegisterToken(data dto.User) (*string, error) {
 }
 
 func (r *compRepository) VerifyAccount(token string) error {
-	var expiredAt time.Time
+	var verificationToken models.VerificationToken
 
-	err := r.DB.QueryRow("SELECT expired_at FROM verification_token WHERE token = $1", token).Scan(&expiredAt)
+	err := r.DB.Where("token = ?", token).First(&verificationToken).Error
 	if err != nil {
 		return err
 	}
 
-	if time.Now().After(expiredAt) {
+	if time.Now().After(verificationToken.ExpiredAt) {
 		return errors.New(strconv.Itoa(http.StatusGone))
 	}
 
-	tx, err := r.DB.Begin()
-	if err != nil {
-		return err
-	}
+	err = r.DB.Transaction(func(tx *gorm.DB) error {
+		now := time.Now()
+		err := tx.Model(&models.User{}).Where("id = ?", verificationToken.UserID).Updates(map[string]interface{}{
+			"is_verified": true,
+			"verified_at": &now,
+		}).Error
+		if err != nil {
+			return err
+		}
 
-	_, err = tx.Exec("UPDATE users SET is_verified = true, verified_at = NOW() WHERE id = (SELECT user_id FROM verification_token WHERE token = $1)", token)
+		return tx.Where("token = ?", token).Delete(&models.VerificationToken{}).Error
+	})
 	if err != nil {
-		tx.Rollback()
-		return err
-	}
-
-	_, err = tx.Exec(`DELETE from verification_token WHERE token = $1`, token)
-	if err != nil {
-		tx.Rollback()
-		return err
-	}
-
-	err = tx.Commit()
-	if err != nil {
-		tx.Rollback()
 		return err
 	}
 
@@ -93,41 +90,57 @@ func (r *compRepository) VerifyAccount(token string) error {
 }
 
 func (r *compRepository) GetUserData(username string) (*dto.User, error) {
-	var data dto.User
+	var user models.User
 
-	err := r.DB.QueryRow("SELECT * FROM users WHERE username = $1", username).Scan(&data.ID, &data.Username, &data.Email, &data.Password, &data.FirstName, &data.LastName, &data.Contact, &data.Address, &data.IsVerified, &data.VerifiedAt, &data.CreatedAt)
+	err := r.DB.Where("username = ?", username).First(&user).Error
 	if err != nil {
 		return nil, err
+	}
+
+	var verifiedAt *string
+	if user.VerifiedAt != nil {
+		vStr := user.VerifiedAt.Format("2006-01-02 15:04:05")
+		verifiedAt = &vStr
+	}
+
+	data := dto.User{
+		ID:         user.ID,
+		Username:   user.Username,
+		Email:      user.Email,
+		Password:   user.Password,
+		FirstName:  user.FirstName,
+		LastName:   user.LastName,
+		Contact:    user.Contact,
+		Address:    user.Address,
+		IsVerified: user.IsVerified,
+		VerifiedAt: verifiedAt,
+		CreatedAt:  user.CreatedAt.Format("2006-01-02 15:04:05"),
 	}
 
 	return &data, nil
 }
 
 func (r *compRepository) RequestResetPassword(data dto.User, otp string) error {
-	tx, err := r.DB.Begin()
+	otpInt, err := strconv.Atoi(otp)
 	if err != nil {
 		return err
 	}
 
-	_, err = tx.Exec(`
-		DELETE FROM reset_otp WHERE user_id = $1::uuid
-	`, data.ID)
-	if err != nil {
-		tx.Rollback()
-		return err
-	}
+	err = r.DB.Transaction(func(tx *gorm.DB) error {
+		err := tx.Where("user_id = ?", data.ID).Delete(&models.ResetOTP{}).Error
+		if err != nil {
+			return err
+		}
 
-	_, err = tx.Exec(`
-		INSERT INTO reset_otp (user_id, otp, expired_at) VALUES($1, $2, NOW() + INTERVAL '2 hours')
-	`, data.ID, otp)
-	if err != nil {
-		tx.Rollback()
-		return err
-	}
+		resetOTP := models.ResetOTP{
+			UserID:    data.ID,
+			OTP:       otpInt,
+			ExpiredAt: time.Now().Add(2 * time.Hour),
+		}
 
-	err = tx.Commit()
+		return tx.Create(&resetOTP).Error
+	})
 	if err != nil {
-		tx.Rollback()
 		return err
 	}
 
@@ -135,39 +148,31 @@ func (r *compRepository) RequestResetPassword(data dto.User, otp string) error {
 }
 
 func (r *compRepository) VerifyResetPassword(data dto.OTPVerifyToken) (*dto.OTPVerifyToken, error) {
-	var d dto.OTPVerifyToken
+	var resetOTP models.ResetOTP
 
-	err := r.DB.QueryRow(`
-		SELECT user_id, otp FROM reset_otp WHERE user_id = $1
-	`, data.UserID).Scan(&d.UserID, &d.OTP)
+	err := r.DB.Where("user_id = ?", data.UserID).First(&resetOTP).Error
 	if err != nil {
 		return nil, err
+	}
+
+	d := dto.OTPVerifyToken{
+		UserID: resetOTP.UserID,
+		OTP:    strconv.Itoa(resetOTP.OTP),
 	}
 
 	return &d, nil
 }
 
 func (r *compRepository) ResetPassword(user_data dto.User) error {
-	tx, err := r.DB.Begin()
-	if err != nil {
-		return err
-	}
+	err := r.DB.Transaction(func(tx *gorm.DB) error {
+		err := tx.Where("user_id = ?", user_data.ID).Delete(&models.ResetOTP{}).Error
+		if err != nil {
+			return err
+		}
 
-	_, err = tx.Exec("DELETE FROM reset_otp WHERE user_id = $1::uuid", user_data.ID)
+		return tx.Model(&models.User{}).Where("id = ?", user_data.ID).Update("password", user_data.Password).Error
+	})
 	if err != nil {
-		tx.Rollback()
-		return err
-	}
-
-	_, err = tx.Exec("UPDATE users SET password = $1 WHERE id = $2::uuid", user_data.Password, user_data.ID)
-	if err != nil {
-		tx.Rollback()
-		return err
-	}
-
-	err = tx.Commit()
-	if err != nil {
-		tx.Rollback()
 		return err
 	}
 
@@ -175,29 +180,29 @@ func (r *compRepository) ResetPassword(user_data dto.User) error {
 }
 
 func (r *compRepository) UploadUserProfile(data dto.User, image_url string) error {
-	_, err := r.DB.Exec(`
-		INSERT INTO users_image (user_id, image_url)
-		VALUES ($1, $2)
-		ON CONFLICT (user_id)
-		DO UPDATE SET
-			image_url = $2;
-	`, data.ID, image_url)
+	var userImage models.UsersImage
+	err := r.DB.Where("user_id = ?", data.ID).First(&userImage).Error
 	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			userImage = models.UsersImage{
+				UserID:   data.ID,
+				ImageURL: image_url,
+			}
+			return r.DB.Create(&userImage).Error
+		}
 		return err
 	}
 
-	return nil
+	return r.DB.Model(&userImage).Update("image_url", image_url).Error
 }
 
 func (r *compRepository) GetUserProfile(id string) (*string, error) {
-	var image_url string
+	var userImage models.UsersImage
 
-	err := r.DB.QueryRow(`
-		SELECT image_url FROM users_image WHERE user_id = $1
-	`, id).Scan(&image_url)
+	err := r.DB.Where("user_id = ?", id).First(&userImage).Error
 	if err != nil {
 		return nil, err
 	}
 
-	return &image_url, nil
+	return &userImage.ImageURL, nil
 }

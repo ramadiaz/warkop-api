@@ -11,9 +11,10 @@ import (
 )
 
 func CompRouter(api *gin.RouterGroup) {
-	api.Use(middleware.ClientTracker(config.InitDB()))
+	db := config.InitDB()
+	api.Use(middleware.ClientTracker(db))
 
-	compRepository := repositories.NewComponentRepository(config.InitDB())
+	compRepository := repositories.NewComponentRepository(db)
 	compService := services.NewService(compRepository)
 	compHandler := handlers.NewCompHandlers(compService)
 
@@ -23,7 +24,7 @@ func CompRouter(api *gin.RouterGroup) {
 	api.POST("/key/register", compHandler.GenerateAPIKey)
 
 	userRouter := api.Group("/user")
-	userRouter.Use(middleware.APIKeyAuth(config.InitDB()))
+	userRouter.Use(middleware.APIKeyAuth(db))
 	{
 		userRouter.POST("/register", compHandler.RegisterUser)
 		userRouter.POST("/login", compHandler.LoginUser)
@@ -46,7 +47,7 @@ func CompRouter(api *gin.RouterGroup) {
 	}
 
 	menuRouter := api.Group("/menu")
-	menuRouter.Use(middleware.APIKeyAuth(config.InitDB()))
+	menuRouter.Use(middleware.APIKeyAuth(db))
 	menuRouter.Use(middleware.AuthMiddleware())
 	{
 		menuRouter.POST("/register", compHandler.RegisterMenu)
@@ -54,7 +55,7 @@ func CompRouter(api *gin.RouterGroup) {
 	}
 
 	transactionRouter := api.Group("/transaction")
-	transactionRouter.Use(middleware.APIKeyAuth(config.InitDB()))
+	transactionRouter.Use(middleware.APIKeyAuth(db))
 	transactionRouter.Use(middleware.AuthMiddleware())
 	{
 		transactionRouter.POST("/register", compHandler.RegisterTransaction)
